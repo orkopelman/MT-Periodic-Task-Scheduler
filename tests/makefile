@@ -20,7 +20,7 @@ INC_DIR= ../inc/
 INL_DIR= ../inc/inl/
 
 TARGET = utest
-OBJS = utest.o  $(SRC_DIR)actions.o $(SRC_DIR)task.o $(SRC_DIR)schduler.o 
+OBJS = utest.o  $(SRC_DIR)actions.o $(SRC_DIR)task.o $(SRC_DIR)scheduler.o 
 		
 all: $(TARGET)
 

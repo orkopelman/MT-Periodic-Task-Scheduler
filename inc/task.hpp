@@ -2,41 +2,40 @@
 #define __TASK_HPP__
 
 #include "abstract_task.hpp"
-#include <stdlib.h>
+
 #include <iostream>
 #include <vector>
 #include <memory>
 #include <chrono>
 
-constexpr int FACTOR_NANO_TO_MSEC = 1000000;
-constexpr int FACTOR_SEC_TO_MSEC = 1000;
-constexpr int FACTOR_MICRO_TO_MILI = 1000;
 constexpr int ALWAYS_PERFORM = -10;
-constexpr int TASK_NEED_RESCHDULE = 0;
-constexpr int TASK_NEED_REMOVAL = 1;
+constexpr int TIME_TASK_NEED_RESCHEDULE = 0;
+constexpr int TIME_TASK_NEED_REMOVAL = 1;
 
-class Task {
+using excTime = std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<double>>;
+
+class TimedTask {
 public:
-    Task(size_t a_period, std::unique_ptr<AbstractTask> a_task, int a_timesToPerform=ALWAYS_PERFORM);
-    Task(Task& a_other);
+    TimedTask(std::chrono::duration<double> a_period, std::unique_ptr<AbstractTask> a_task, int a_timesToPerform=ALWAYS_PERFORM);
+    TimedTask(TimedTask& a_other);
     
 
     int execute();
-
     void setExcTime();
-    time_t getExcTime();
+    excTime ExcTime();
 
 private:
     std::unique_ptr<AbstractTask> m_task;
-    size_t m_periodic;
+    std::chrono::duration<double> m_periodic;
     int m_timesToPerform;
-    time_t m_exceTime; 
+    excTime m_exceTime; 
 };
 
-struct LessThanByCrit {
-    bool operator()(const std::unique_ptr<Task>& a_first,const std::unique_ptr<Task>& a_sec) const
+
+struct CompaeExecTimes {
+    bool operator()(const std::unique_ptr<TimedTask>& a_first,const std::unique_ptr<TimedTask>& a_sec) const
     {
-        return a_first->getExcTime() > a_sec->getExcTime();
+        return a_first->ExcTime() > a_sec->ExcTime();
     }
 };
 
