@@ -19,12 +19,10 @@ void Scheduler::AddTimedTask(std::shared_ptr<TimedTask> a_TimedTask) {
 }
 
 void Scheduler::Run() {
-
     auto startTime = std::chrono::system_clock::now();
     std::cout << "Time 0 : " << "nothing happen" <<  "\n";
 
     while (true) {
- 
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [this] { return m_stop || !m_taskQueue.empty(); });
         if (m_stop && m_taskQueue.empty())
@@ -34,26 +32,26 @@ void Scheduler::Run() {
 
         while (!m_taskQueue.empty() && m_taskQueue.top()->m_exceTime <= m_currentTime) {
             std::shared_ptr<TimedTask> tempTimedTask = m_taskQueue.top();
-          
             PrintTimeDif(startTime, m_currentTime);
             m_taskQueue.pop();
-
 
             if (ExcuteTask(tempTimedTask) == TIME_TASK_NEED_RESCHEDULE) {
                 AddTimedTaskinternal((tempTimedTask));
             }
-           
         }
     }
 }
 
-
 void Scheduler::StopExecution() {
-
-    m_stop = true;
-    m_cv.notify_one(); // Notify the waiting thread to wake up
+    std::unique_lock<std::mutex> lock(m_mutex);
     size_t numOfTasks = m_taskQueue.size();
-    std::cout << "Excution Stopped, there are " << numOfTasks << " to be excuted \n";
+    while (!m_taskQueue.empty()) {
+        m_taskQueue.pop();
+    }
+    m_stop = true;
+    
+    m_cv.notify_one(); // Notify the waiting thread to wake up
+    std::cout << "Excution Stopped, " << numOfTasks << " task/s were in the queue when terminated \n";
     m_threadPool.ShutDown();
 }
 
@@ -69,7 +67,6 @@ int Scheduler::ExcuteTask(std::shared_ptr<TimedTask> a_timedTask) {
     }
     a_timedTask->m_timesToPerform--;
     return (a_timedTask->m_timesToPerform>0) ? TIME_TASK_NEED_RESCHEDULE : TIME_TASK_NEED_REMOVAL;
- 
 }
 
 void Scheduler::PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to) {

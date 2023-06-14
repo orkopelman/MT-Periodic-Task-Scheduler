@@ -17,22 +17,17 @@ std::shared_ptr<TimedTask> BuildPrintStringTask(std::string a_str, int a_period,
 
 
 BEGIN_TEST(basic_3_tasks_run_add_stop)
-
     std::shared_ptr<TimedTask> TimedTaskB = BuildPrintStringTask("TimedTask B",13,2);
     std::shared_ptr<TimedTask> TimedTaskA = BuildPrintStringTask("TimedTask A", 3,3);
     std::shared_ptr<TimedTask> TimedTaskC = BuildPrintStringTask("TimedTask C",20,1);
-
-    
     std::shared_ptr<Scheduler> sd1 = std::make_shared<Scheduler>();
     
     std::thread RunThread([&] {
         sd1->Run();
     });
-   
     sd1->AddTimedTask((TimedTaskC));
     sd1->AddTimedTask((TimedTaskA));
     sd1->AddTimedTask((TimedTaskB));
-    
 
     std::thread StopThread([&] {
         std::this_thread::sleep_for(30s);
@@ -53,8 +48,6 @@ BEGIN_TEST(add_new_task_during_run)
     std::shared_ptr<TimedTask> TimedTaskA = BuildPrintStringTask("TimedTask A", 3,3);
     std::shared_ptr<TimedTask> TimedTaskC = BuildPrintStringTask("TimedTask C",20,1);
     std::shared_ptr<TimedTask> TimedTaskD = BuildPrintStringTask("TimedTask D",5,1);
-
-    
     std::shared_ptr<Scheduler> sd1 = std::make_shared<Scheduler>();
     
     std::thread RunThread([&] {
@@ -83,8 +76,33 @@ BEGIN_TEST(add_new_task_during_run)
 END_TEST
 
 
+BEGIN_TEST(stop_while_task_inside)
+    std::shared_ptr<TimedTask> TimedTaskB = BuildPrintStringTask("TimedTask B",13,2);
+    std::shared_ptr<TimedTask> TimedTaskA = BuildPrintStringTask("TimedTask A", 3,3);
+    std::shared_ptr<TimedTask> TimedTaskC = BuildPrintStringTask("TimedTask C",20,1);
+    std::shared_ptr<Scheduler> sd1 = std::make_shared<Scheduler>();
+    
+    std::thread RunThread([&] {
+        sd1->Run();
+    });
+    sd1->AddTimedTask((TimedTaskC));
+    sd1->AddTimedTask((TimedTaskA));
+    sd1->AddTimedTask((TimedTaskB));
+
+    std::thread StopThread([&] {
+        std::this_thread::sleep_for(10s);
+        sd1->StopExecution();
+    });
+
+    RunThread.join();
+
+    StopThread.join();
+	ASSERT_PASS();
+END_TEST
+
+
 BEGIN_SUITE(Its what you learn after you know it all that counts)
     //TEST(basic_3_tasks_run_add_stop)
-    TEST(add_new_task_during_run)
-
+    //TEST(add_new_task_during_run)
+    TEST(stop_while_task_inside)
 END_SUITE

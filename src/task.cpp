@@ -16,7 +16,6 @@ TimedTask::TimedTask(const TimedTask& a_other) {
     m_timesToPerform = a_other.m_timesToPerform;
 }
 
-
 void TimedTask::printExcTimeInSeconds() {
     auto duration = m_exceTime.time_since_epoch();
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
