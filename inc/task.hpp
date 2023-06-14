@@ -1,9 +1,9 @@
 #ifndef __TASK_HPP__
 #define __TASK_HPP__
 
-#include "abstract_task.hpp"
-
+#include "threads_pool_act.hpp"
 #include <iostream>
+#include <string>
 #include <vector>
 #include <memory>
 #include <chrono>
@@ -16,27 +16,32 @@ using excTime = std::chrono::time_point<std::chrono::system_clock, std::chrono::
 
 class TimedTask {
 public:
-    TimedTask(std::chrono::duration<double> a_period, std::unique_ptr<AbstractTask> a_task, int a_timesToPerform=ALWAYS_PERFORM);
-    TimedTask(TimedTask& a_other);
-    
-
-    int execute();
+    TimedTask(std::string a_name, std::chrono::duration<double> a_interval, 
+                std::shared_ptr<threads::AbstractAct> a_task, 
+                int a_timesToPerform=ALWAYS_PERFORM);
+               
+    TimedTask(const TimedTask& other);
+     
     void setExcTime();
-    excTime ExcTime();
+    void printExcTimeInSeconds();
 
-private:
-    std::unique_ptr<AbstractTask> m_task;
-    std::chrono::duration<double> m_periodic;
+public:
+    std::string m_name;
+    std::chrono::duration<double> m_interval;
+    std::shared_ptr<threads::AbstractAct> m_task;
     int m_timesToPerform;
     excTime m_exceTime; 
 };
 
 
-struct CompaeExecTimes {
-    bool operator()(const std::unique_ptr<TimedTask>& a_first,const std::unique_ptr<TimedTask>& a_sec) const
+
+ struct CompaeExecTimes {
+    bool operator()(const std::shared_ptr<TimedTask>& a_first,const std::shared_ptr<TimedTask>& a_sec) const
     {
-        return a_first->ExcTime() > a_sec->ExcTime();
+        return a_first->m_exceTime > a_sec->m_exceTime;
     }
-};
+
+ };
+
 
 #endif //__TASK_HPP__

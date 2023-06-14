@@ -1,87 +1,86 @@
 #include "scheduler.hpp"
-#include <thread>
-#include <iomanip>
-
-Schduler::Schduler()
-: m_isPaused(false)
-{}
+using namespace threads;
+using namespace std::chrono_literals; // std::this_thread::sleep_for
 
 
-void Schduler::AddTimedTask(std::unique_ptr<TimedTask> a_TimedTask) {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_vecTimedTasks.push_back(std::move(a_TimedTask));
+Scheduler::Scheduler() 
+: m_threadPool(std::thread::hardware_concurrency())
+, m_stop(false) 
+{} 
+
+Scheduler::~Scheduler() {
+    m_stop = true;
 }
 
+void Scheduler::AddTimedTask(std::shared_ptr<TimedTask> a_TimedTask) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    AddTimedTaskinternal((a_TimedTask));
+    m_cv.notify_one();
+}
 
-void Schduler::Run() {
-    if (m_vecTimedTasks.empty()) return;
-    
-    std::thread coordinator([&]() {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        SetAndAddTimedTasks();
-        m_cv.notify_one(); 
-    });
+void Scheduler::Run() {
 
- 
     auto startTime = std::chrono::system_clock::now();
     std::cout << "Time 0 : " << "nothing happen" <<  "\n";
 
-    std::thread executeTimedTaskThread([&]() {
+    while (true) {
+ 
         std::unique_lock<std::mutex> lock(m_mutex);
-        while (!m_TimedTasks.empty()) {
-            auto currentTime = std::chrono::system_clock::now();
-            if (!m_isPaused && m_TimedTasks.top()->ExcTime() <= currentTime) {
-                lock.unlock();  // Unlock before executing the task
-                auto elapsedTime = currentTime - startTime;
-                double elapsedTimeInSeconds = std::chrono::duration<double>(elapsedTime).count();
-                std::cout << "Time " << elapsedTimeInSeconds << " ";
-                std::unique_ptr<TimedTask> tempTimedTask;
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    tempTimedTask = std::make_unique<TimedTask>(*(m_TimedTasks.top()));
-                    m_TimedTasks.pop();
-                }
-                if (tempTimedTask->execute() == TIME_TASK_NEED_RESCHEDULE) {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_TimedTasks.push(std::move(tempTimedTask));
-                }
-                lock.lock();  // Lock again after executing the task
-            } else {
-                if (m_TimedTasks.empty()) {
-                    m_cv.wait(lock);  // Wait for a notification when there are no tasks
-                } else {
-                    auto elapsedTime = currentTime - m_TimedTasks.top()->ExcTime();
-                    std::chrono::milliseconds sleepDuration(static_cast<int64_t>(std::chrono::duration<double>(elapsedTime).count() * 1000));
-                    m_cv.wait_for(lock, sleepDuration);  // Wait for a specific duration or a notification
-                }
+        m_cv.wait(lock, [this] { return m_stop || !m_taskQueue.empty(); });
+        if (m_stop && m_taskQueue.empty())
+            return;
+
+        m_currentTime = std::chrono::system_clock::now();
+
+        while (!m_taskQueue.empty() && m_taskQueue.top()->m_exceTime <= m_currentTime) {
+            std::shared_ptr<TimedTask> tempTimedTask = m_taskQueue.top();
+          
+            PrintTimeDif(startTime, m_currentTime);
+            m_taskQueue.pop();
+
+
+            if (ExcuteTask(tempTimedTask) == TIME_TASK_NEED_RESCHEDULE) {
+                AddTimedTaskinternal((tempTimedTask));
             }
+           
         }
-    });
-    coordinator.join();
-    executeTimedTaskThread.join();
-
-
-}
-
-int Schduler::PauseExcecution(){
-    m_isPaused = true; 
-    return m_TimedTasks.size();
-}
-
-void Schduler::ResumeExcecution(){
-    m_isPaused = false;
-}
-
-bool Schduler:: NoTimedTasksInserted() const {
-    return m_vecTimedTasks.empty();
-}
-
-void Schduler::SetAndAddTimedTasks() {
-    //std::lock_guard<std::mutex> lock(m_mutex);
-    for (auto& TimedTask : m_vecTimedTasks) {
-        TimedTask->setExcTime();
-        m_TimedTasks.push(std::move(TimedTask));
     }
-    //m_vecTimedTasks.clear();
+}
 
+
+void Scheduler::StopExecution() {
+
+    m_stop = true;
+    m_cv.notify_one(); // Notify the waiting thread to wake up
+    size_t numOfTasks = m_taskQueue.size();
+    std::cout << "Excution Stopped, there are " << numOfTasks << " to be excuted \n";
+    m_threadPool.ShutDown();
+}
+
+void Scheduler::AddTimedTaskinternal(std::shared_ptr<TimedTask> a_TimedTask) {
+    a_TimedTask->setExcTime();
+    m_taskQueue.push(a_TimedTask);
+}
+
+int Scheduler::ExcuteTask(std::shared_ptr<TimedTask> a_timedTask) {
+    m_threadPool.AddTask(a_timedTask->m_task);
+    if (a_timedTask->m_timesToPerform == ALWAYS_PERFORM) {
+        return TIME_TASK_NEED_RESCHEDULE;
+    }
+    a_timedTask->m_timesToPerform--;
+    return (a_timedTask->m_timesToPerform>0) ? TIME_TASK_NEED_RESCHEDULE : TIME_TASK_NEED_REMOVAL;
+ 
+}
+
+void Scheduler::PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to) {
+    auto elapsedTime = a_to - a_from;
+    double elapsedTimeInSeconds = std::chrono::duration<double>(elapsedTime).count();
+    std::cout << "Time " << elapsedTimeInSeconds << " ";
+           
+}
+
+double Scheduler::CalcElpasedTime(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to) {
+    auto elapsedTime = a_to - a_from;
+    return std::chrono::duration<double>(elapsedTime).count();
+  
 }

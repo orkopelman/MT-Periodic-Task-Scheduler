@@ -2,6 +2,7 @@
 #define SCHEDULER_HPP
 
 #include "task.hpp"
+#include "threads_pool.hpp"
 #include <vector>
 #include <queue>
 #include <atomic>
@@ -9,28 +10,35 @@
 #include <thread>
 #include <condition_variable>
 
-class Schduler {
+class Scheduler {
 public:
-    Schduler();
+    Scheduler();
+    ~Scheduler();
 
-    void AddTimedTask(std::unique_ptr<TimedTask> a_TimedTask);
+    void AddTimedTask(std::shared_ptr<TimedTask> a_TimedTask);
     void Run();
-    int PauseExcecution();
-    void ResumeExcecution();
- 
+    void StopExecution();
 
 private:
-
-    bool NoTimedTasksInserted() const;
-    void SetAndAddTimedTasks();
+    void AddTimedTaskinternal(std::shared_ptr<TimedTask> a_TimedTask);
+    int ExcuteTask(std::shared_ptr<TimedTask> a_timedTask);
+    void Reschedule(std::unique_ptr<TimedTask> a_timedTask);
+    void PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to);
+    double CalcElpasedTime(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to);
 
 private:
-    std::atomic_bool m_isPaused;
-    std::condition_variable m_cv;
+    std::priority_queue<std::shared_ptr<TimedTask>,
+                        std::vector<std::shared_ptr<TimedTask>>,
+                        CompaeExecTimes> m_taskQueue;
+    threads::ThreadPool m_threadPool;
     std::mutex m_mutex;
-    std::vector<std::unique_ptr<TimedTask>> m_vecTimedTasks;
-    std::priority_queue<std::unique_ptr<TimedTask>,std::vector<std::unique_ptr<TimedTask>>,CompaeExecTimes> m_TimedTasks;
+    std::condition_variable m_cv;
+    std::atomic<bool> m_stop;
+    std::chrono::system_clock::time_point m_currentTime;
+                        
 };
+
+
 
 
 #endif //__SCHEDULER_HPP__
