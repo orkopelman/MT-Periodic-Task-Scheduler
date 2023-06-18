@@ -8,6 +8,5 @@ For several tasks on same interval time to Excutor will be able
 to perfrom them concurrently.
 
 
-Example:
 ![image](https://github.com/orkopelman/MT-Periodic-Task-Scheduler/assets/61802394/695ba15b-f96d-45fe-b0d1-ca781254bfda)
 
