@@ -22,7 +22,7 @@ public:
 private:
     void AddTimedTaskinternal(std::shared_ptr<TimedTask> a_TimedTask);
     int ExcuteTask(std::shared_ptr<TimedTask> a_timedTask);
-    void PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to);
+    
     
 private:
     std::priority_queue<std::shared_ptr<TimedTask>,std::vector<std::shared_ptr<TimedTask>>,CompaeExecTimes> m_taskQueue;

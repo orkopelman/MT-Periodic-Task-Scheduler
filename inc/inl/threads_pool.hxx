@@ -21,6 +21,7 @@ inline void ThreadPool::threadAct()
         m_queue.Dequeue(ptrAct);
 
         try {
+            //std::cout << getCurrentTimeAsString() << " : ";
             ptrAct->Act();
             
         } catch(PoisonAppleException const& e){

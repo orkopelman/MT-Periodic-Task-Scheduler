@@ -6,6 +6,19 @@ static std::chrono::_V2::system_clock::rep produceCurrentTimeInNanoSec() {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(dtn).count();
 }
 
+std::string getCurrentTimeAsString() {
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    std::tm* timeInfo = std::localtime(&currentTime);
+    int hours = timeInfo->tm_hour;
+    int minutes = timeInfo->tm_min;
+    int seconds = timeInfo->tm_sec;
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(2) << hours << ":"
+       << std::setfill('0') << std::setw(2) << minutes << ":"
+       << std::setfill('0') << std::setw(2) << seconds;
+    return ss.str();
+}
 
 TimedTask::TimedTask(const std::string& a_name, std::chrono::duration<double> a_interval, std::shared_ptr<threads::AbstractAct> a_task,
                         int a_timesToPerform)
@@ -39,4 +52,10 @@ int TimedTask::TimesToPerform() const noexcept {
 
 void TimedTask::updateTimeToPerofm() {
     m_timesToPerform--;
+}
+
+void TimedTask::PrintExecutionMessage() const noexcept {
+    std::cout << getCurrentTimeAsString();
+    std::cout <<" : Task ID: " << m_taskID 
+    << " Task Name: "<< m_name <<" was executed.\n";
 }

@@ -7,6 +7,8 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 
 constexpr int ALWAYS_PERFORM = -10;
 constexpr int TIME_TASK_NEED_RESCHEDULE = 0;
@@ -27,8 +29,8 @@ public:
 
     void setExcTime();
     void updateTimeToPerofm();
+    void PrintExecutionMessage() const noexcept;
     
-   
 private:
     std::chrono::_V2::system_clock::rep m_taskID; 
     std::string m_name;
@@ -44,5 +46,7 @@ struct CompaeExecTimes {
         return a_first->ExcTime() > a_sec->ExcTime();
     }
  };
+
+std::string getCurrentTimeAsString();
 
 #endif //__TASK_HPP__
