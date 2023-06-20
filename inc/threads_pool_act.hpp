@@ -20,16 +20,7 @@ protected:
 
 };
 
-struct PrintStrAct : public AbstractAct {
-	PrintStrAct(std::string a_str) : m_str(a_str) {}
-	void Act() override {
-        auto elapsedTime = std::chrono::system_clock::now();
-        auto durationInSeconds = std::chrono::duration_cast<std::chrono::seconds>(elapsedTime.time_since_epoch()).count();
-        std::cout << m_str  << " at: " << durationInSeconds << "\n";
-    }
 
- 	std::string m_str;
-};
 
 template <typename F>
 class FunctionObjectAct : public AbstractAct {

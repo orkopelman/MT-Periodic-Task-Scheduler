@@ -1,27 +1,42 @@
 #include "task.hpp"
 
-TimedTask::TimedTask(std::string a_name, std::chrono::duration<double> a_interval, std::shared_ptr<threads::AbstractAct> a_task,
+static std::chrono::_V2::system_clock::rep produceCurrentTimeInNanoSec() {
+    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+    std::chrono::system_clock::duration dtn = tp.time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(dtn).count();
+}
+
+
+TimedTask::TimedTask(const std::string& a_name, std::chrono::duration<double> a_interval, std::shared_ptr<threads::AbstractAct> a_task,
                         int a_timesToPerform)
-: m_name(a_name)
+: m_taskID(produceCurrentTimeInNanoSec())
+, m_name(a_name)
 , m_interval(a_interval)
 , m_task((a_task)) 
 , m_timesToPerform(a_timesToPerform)
 , m_exceTime(a_interval)
 {}
 
-TimedTask::TimedTask(const TimedTask& a_other) {
-    m_name = a_other.m_name;
-    m_interval = a_other.m_interval;
-    m_task = a_other.m_task;
-    m_timesToPerform = a_other.m_timesToPerform;
-}
-
-void TimedTask::printExcTimeInSeconds() {
-    auto duration = m_exceTime.time_since_epoch();
-    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
-    std::cout << m_name<< " ExcTime in seconds: " << seconds << std::endl;
-}
-
 void TimedTask::setExcTime() {
     m_exceTime = std::chrono::system_clock::now() + m_interval;
+}
+
+excTime TimedTask::ExcTime() const noexcept {
+    return m_exceTime;
+}
+
+std::chrono::_V2::system_clock::rep TimedTask::TaskId() const noexcept{
+    return m_taskID;
+}
+
+std::shared_ptr<threads::AbstractAct> TimedTask::Task() const noexcept{
+    return m_task;
+}
+
+int TimedTask::TimesToPerform() const noexcept {
+    return m_timesToPerform;
+}
+
+void TimedTask::updateTimeToPerofm() {
+    m_timesToPerform--;
 }

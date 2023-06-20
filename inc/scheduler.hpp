@@ -22,14 +22,10 @@ public:
 private:
     void AddTimedTaskinternal(std::shared_ptr<TimedTask> a_TimedTask);
     int ExcuteTask(std::shared_ptr<TimedTask> a_timedTask);
-    void Reschedule(std::unique_ptr<TimedTask> a_timedTask);
     void PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to);
-    double CalcElpasedTime(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to);
-
+    
 private:
-    std::priority_queue<std::shared_ptr<TimedTask>,
-                        std::vector<std::shared_ptr<TimedTask>>,
-                        CompaeExecTimes> m_taskQueue;
+    std::priority_queue<std::shared_ptr<TimedTask>,std::vector<std::shared_ptr<TimedTask>>,CompaeExecTimes> m_taskQueue;
     threads::ThreadPool m_threadPool;
     std::mutex m_mutex;
     std::condition_variable m_cv;

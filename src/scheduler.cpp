@@ -2,7 +2,6 @@
 using namespace threads;
 using namespace std::chrono_literals; // std::this_thread::sleep_for
 
-
 Scheduler::Scheduler() 
 : m_threadPool(std::thread::hardware_concurrency())
 , m_stop(false) 
@@ -30,7 +29,7 @@ void Scheduler::Run() {
 
         m_currentTime = std::chrono::system_clock::now();
 
-        while (!m_taskQueue.empty() && m_taskQueue.top()->m_exceTime <= m_currentTime) {
+        while (!m_taskQueue.empty() && m_taskQueue.top()->ExcTime() <= m_currentTime) {
             std::shared_ptr<TimedTask> tempTimedTask = m_taskQueue.top();
             PrintTimeDif(startTime, m_currentTime);
             m_taskQueue.pop();
@@ -61,12 +60,12 @@ void Scheduler::AddTimedTaskinternal(std::shared_ptr<TimedTask> a_TimedTask) {
 }
 
 int Scheduler::ExcuteTask(std::shared_ptr<TimedTask> a_timedTask) {
-    m_threadPool.AddTask(a_timedTask->m_task);
-    if (a_timedTask->m_timesToPerform == ALWAYS_PERFORM) {
+    m_threadPool.AddTask(a_timedTask->Task());
+    if (a_timedTask->TimesToPerform() == ALWAYS_PERFORM) {
         return TIME_TASK_NEED_RESCHEDULE;
     }
-    a_timedTask->m_timesToPerform--;
-    return (a_timedTask->m_timesToPerform>0) ? TIME_TASK_NEED_RESCHEDULE : TIME_TASK_NEED_REMOVAL;
+    a_timedTask->updateTimeToPerofm();
+    return (a_timedTask->TimesToPerform()>0) ? TIME_TASK_NEED_RESCHEDULE : TIME_TASK_NEED_REMOVAL;
 }
 
 void Scheduler::PrintTimeDif(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to) {
@@ -76,8 +75,3 @@ void Scheduler::PrintTimeDif(std::chrono::system_clock::time_point a_from, std::
            
 }
 
-double Scheduler::CalcElpasedTime(std::chrono::system_clock::time_point a_from, std::chrono::system_clock::time_point a_to) {
-    auto elapsedTime = a_to - a_from;
-    return std::chrono::duration<double>(elapsedTime).count();
-  
-}
